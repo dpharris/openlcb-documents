@@ -1,6 +1,8 @@
 = OpenLCB for Modular Layouts Working Notes
 :toc: auto
 
+NOTE: Github's automatic rendering of AsciiDoc does not render embedded diagrams or sidebars correctly. Use Visual Studio Code with the https://marketplace.visualstudio.com/items?itemName=asciidoctor.asciidoctor-vscode[Asciidoc Extension] configured to "enable kroki integration to generate diagrams" for the best live rendering of this document.
+
 == Terminology
 
 Module:: One or more sections of bench work meant to be operated as a single unit in a fixed configuration with one or more endplates.
