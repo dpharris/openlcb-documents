@@ -1,0 +1,78 @@
+= OpenLCB for Modular Layouts
+
+== Terminology
+
+Module:: One or more sections of bench work meant to be operated as a single unit in a fixed configuration with one or more endplates.
+
+Section:: A component of a module or a non-modular layout. With a single module, inter-section interfaces are not considered endplates, but are considered to be internal to the module.
+
+Endplate:: Endplates are the standardized end surfaces of a module that join to another module. While most modules have two endplates, a module may have only one endplate (e.g., a return loop) or may have more than two endplates (e.g., a junction or crossing module).
+
+NOTE: These terms imply that a portable layout that is entirely self contained and can only be assembled in one way is a *sectional* layout, not a *modular* layout. This proposal assumes that the use of OpenLCB in sectional layouts does not require any additional capabilities.
+
+== User Stories
+
+A modular layout is being assembled on a Friday afternoon for a show running on Saturday and Sunday.
+
+Alice is assembling an LCC bus on a modular layout with a staging yard and other features that will be controlled from a single CTC-style control panel running on a laptop computer; Alice needs to create the panel and link up the signals and turnouts so the dispatcher can route trains into and out of the staging yard and around the layout.
+
+Bob has a module with a junction and station on it with some complex routing and signaling installed. This module is difficult to tie into other modules due the number of signals and turnouts on the module.
+
+Charlie is organizing an operating session on the modular layout, but needs to know the operating possibilities (length of sidings, types of cars accepted on sidings, etc) of each module and in which order the modules are connected.
+
+David has a module that is planned to be in the layout with Alice, Bob, and Charlie but gets rear-ended on a highway while traveling to the place where the modular layout is to be assembled with his modules. He (and his modules) unexpectedly will not be participating in the layout.
+
+Previous attempts at complex LCC in modular layouts have required that these people plan where each module is well in advance and work hard to get everything technical planned and possibly configured well in advance. David's unexpectedly being unable to participate throws those plans into complete disarray. While Alice, Bob, and Charlie are able to assemble a layout, much of the technical planning and configuration done in advance must be redone.
+
+== The Problem
+
+With the exception of the Free-Mo Modular Signal System (MSS) standard, no standard for using a control bus in modular layouts exists, as all other layout control bus technologies rely on transport standards that are not designed to support topology detection and software designed to work with these busses invariably considers modular setups, if at all, as an afterthought. The one exception, MSS, is designed to inflexibly implement a specific signaling practice within a single modular standard. One of the hardest parts of setting up control busses for a modular layout is getting the logical connections between signals, turnouts, and other layout elements made.
+
+Given enough planning and setup time and no concerns about the possibility that a planned for module may be late, missing, or replaced with another module at the last minute, and using existing software with an OpenLCB CAN bus network, OpenLCB nodes in a modular layout can be logically connected to provide usable routing, signaling, and turnout control.
+
+This is a proposal to define additional standards on top of the existing OpenLCB standards to enable software assistance in "mapping" a modular layout to reduce the amount of planning effort to allow for flexibility in assembling a modular layout including providing information about the layout that is outside the scope of LCC requirements.
+ 
+== Proposal
+
+For a modular layout using OpenLCB, each module has an OpenLCB CAN network connected to a gateway that connects the module's network to a separate CAN network for each endplate on the module.
+
+[plantuml]
+....
+node "Module1" {
+  Gateway1 --> [OpenLCB CAN Net 1]
+}
+node "Module2" {
+  Gateway2 --> [OpenLCB CAN Net 2]
+}
+node "ModuleN" {
+  GatewayN --> [OpenLCB CAN Net N]
+}
+  Gateway1 <-> Gateway2
+  Gateway2 <-> GatewayN
+....
+
+A Gateway need to be configurable so it is a "module gateway" or a "supporting gateway" (assuming gateway hardware supports three connections (the module and two endplates), the "supporting gateway" would allow multiple gateways to be ganged together to support a module with more than two endplates that has a single "module gateway").
+Gateways configured as a module gateway will:
+
+* be programmed to support a specified number of endplates
+* when powering on, send a message on the gateway-to-gateway network(s), asking "which gateway is beside me" for each endplate
+* when receiving a "which gateway is beside me" message, respond with their own node address and which endplate they received the message on and not pass that message on
+* respond to, and pass on, a message requesting the identity of the gateway and its adjacent gateways with its identity and adjacent gateways
+* when interrogated by address for the contents of the module, return them (this needs to include LCC listeners and events, a layout for display in control panels, operations related data, etc, so there might be multiple ways to query and multiple responses that should not necessarily be standardized by the OpenLCB group)
+
+Gateways configured as a supporting gateway will:
+
+* be programmed to know which network the supported "module gateway" is on
+* pass "which gateway is beside me" messages from outside the module to the module gateway along with the endplate the message was received on
+* pass "which gateway is beside me" messages from the module gateway off the correct endplate
+
+NOTE: while the above descriptions assume a gateway device has only three network connections there is no reason a gateways could not have more connections
+
+.Question
+****
+Should gateways proxy event listeners for nodes in the module being supported? (pro: this would mean only the gateway CDI changes between setups and nodes on the module do not need to change between setups, con: this means the gateway needs to read event messages on the inter-module network(s) and send a different event message into their module's network). The intention in considering this is that the only node on the module that needs any programming is the module gateway, and that everything else is self-contained.
+****
+
+== Why Not OpenLCB over TCP?
+
+There is no mechanism in the Wi-Fi standards to determine if two modules are adjacent, and given the complexity of chaining Ethernet devices together using the Internet Protocol, the use of IP networks for a modular standard is not being considered. This proposal is not intending to preclude the use of IP networks to allow the transmission of OpenLCB data, it is just not considering the possibility of using those networks for the purposes of enabling a semi-automatic logical joining of modules.
