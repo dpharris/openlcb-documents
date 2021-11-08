@@ -1,4 +1,5 @@
-= OpenLCB for Modular Layouts
+= OpenLCB for Modular Layouts Working Notes
+:toc: auto
 
 == Terminology
 
