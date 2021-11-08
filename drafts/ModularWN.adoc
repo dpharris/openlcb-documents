@@ -37,6 +37,8 @@ This is a proposal to define additional standards on top of the existing OpenLCB
  
 == Proposal
 
+[[Can you add a diagram of how a Gateway and the CAN segments work, and interact?   ]]
+
 For a modular layout using OpenLCB, each module has an OpenLCB CAN network connected to a gateway that connects the module's network to a separate CAN network for each endplate on the module.
 
 [plantuml]
